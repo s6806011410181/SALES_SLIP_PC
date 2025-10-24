@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าแอดมิน</title>
+    <style>
+        /* --- CSS "สบายตา" (ปรับปรุงแล้ว) --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa; 
+            color: #333;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .container { 
+            max-width: 1000px; margin: 25px auto; padding: 25px 30px; 
+            background-color: #fff; border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h1 { text-align: center; color: #343a40; margin-bottom: 25px; }
+        table { 
+            width: 100%; border-collapse: collapse; margin-top: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 8px; overflow: hidden;
+        }
+        th, td { 
+            border: 1px solid #e9ecef; padding: 14px 18px; 
+            text-align: left; vertical-align: middle;
+        }
+        th { 
+            background-color: #f1f3f5; font-weight: 600;
+            font-size: 13px; text-transform: uppercase; color: #555;
+        }
+        tbody tr:nth-child(even) { background-color: #fdfdfd; }
+        tbody tr:hover { background-color: #f5f5f5; }
+        .status-Pending { 
+            color: #856404; background-color: #fff3cd; 
+            border: 1px solid #ffeeba; padding: 4px 10px;
+            border-radius: 12px; font-size: 13px; font-weight: 600; display: inline-block;
+        }
+        .status-Confirmed { 
+            color: #155724; background-color: #d4edda; 
+            border: 1px solid #c3e6cb; padding: 4px 10px;
+            border-radius: 12px; font-size: 13px; font-weight: 600; display: inline-block;
+        }
+        .status-Rejected { 
+            color: #721c24; background-color: #f8d7da; 
+            border: 1px solid #f5c6cb; padding: 4px 10px;
+            border-radius: 12px; font-size: 13px; font-weight: 600; display: inline-block;
+        }
+        button, .btn-slip { 
+            border: none; padding: 8px 14px; border-radius: 6px; 
+            cursor: pointer; margin-right: 5px; font-size: 14px;
+            text-decoration: none; transition: background-color 0.2s, opacity 0.2s;
+        }
+        button:hover, .btn-slip:hover { opacity: 0.85; }
+        .btn-confirm { background-color: #28a745; color: white; }
+        .btn-reject { background-color: #dc3545; color: white; }
+        .btn-slip { background-color: #007bff; color: white; } /* ลบ display: inline-block ออก */
+        button[onclick="loadAdminList()"] {
+            background-color: #007bff; color: white; font-size: 15px;
+            padding: 10px 15px; margin-bottom: 10px;
+        }
+        button[onclick="loadAdminList()"]:hover {
+            background-color: #0056b3; opacity: 1;
+        }
+        #admin-content { display: none; } 
+
+        /* --- CSS Modal (Overlay ทั่วไป) --- */
+        .modal-overlay {
+            display: none; justify-content: center; align-items: center;
+            position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        /* --- CSS Modal 1: รหัสผ่าน --- */
+        #password-modal-overlay { z-index: 100; display: flex; }
+        .password-modal-content {
+            background-color: #fefefe; padding: 25px 30px; border-radius: 12px;
+            width: 90%; max-width: 350px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .password-modal-content h2 { margin-top: 0; }
+        .password-modal-content input[type="password"] {
+            width: calc(100% - 24px); padding: 12px;
+            margin-top: 10px; margin-bottom: 15px;
+            border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+        }
+        .password-modal-content button {
+            background-color: #007bff; color: white; padding: 12px 20px;
+            width: 100%; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 16px; font-weight: 600;
+        }
+        .password-modal-content button:hover { background-color: #0056b3; opacity: 1; }
+        #password-error {
+            color: #dc3545; font-size: 14px;
+            margin-top: 10px; display: none;
+        }
+
+        /* --- CSS Modal 2: ยืนยัน --- */
+        #confirmation-modal-overlay { z-index: 101; }
+        .confirmation-modal-content {
+            background-color: #fff; padding: 25px 30px; border-radius: 12px;
+            width: 90%; max-width: 400px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .confirmation-modal-content h3 { margin-top: 0; color: #333; }
+        .confirmation-modal-content p { font-size: 16px; margin-bottom: 20px; }
+        .confirmation-buttons { display: flex; justify-content: space-between; gap: 15px; }
+        .confirmation-buttons button { flex: 1; padding: 12px 20px; font-size: 16px; font-weight: 600; opacity: 1; }
+        .btn-cancel { background-color: #6c757d; color: white; }
+        .btn-cancel:hover { background-color: #5a6268; }
+        
+        /* --- CSS Modal 3: แจ้งเตือน --- */
+        #alert-modal-overlay { z-index: 102; }
+        .alert-modal-content {
+            background-color: #fff; padding: 25px 30px; border-radius: 12px;
+            width: 90%; max-width: 350px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .alert-modal-content h3 { margin-top: 0; font-size: 1.3em; }
+        .alert-modal-content.success h3 { color: #28a745; }
+        .alert-modal-content.error h3 { color: #dc3545; }
+        .alert-modal-content p { font-size: 16px; margin-bottom: 20px; color: #333; }
+        .alert-modal-content button {
+            background-color: #007bff; color: white; border: none;
+            padding: 12px 20px; width: 100%; border-radius: 8px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        .alert-modal-content button:hover { background-color: #0056b3; opacity: 1; }
+
+        /* --- CSS Modal 4: แสดงสลิป (ใหม่) --- */
+        #slip-modal-overlay { z-index: 101; }
+        .slip-modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 90vw; /* กว้างสุด 90% ของจอ */
+        }
+        .slip-modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .slip-modal-content img {
+            max-width: 100%; /* ให้รูป responsive */
+            max-height: 75vh; /* สูงสุด 75% ของจอ */
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .slip-modal-content button {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 15px;
+            width: 100px;
+        }
+        .slip-modal-content button:hover {
+             background-color: #5a6268;
+             opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="password-modal-overlay" class="modal-overlay">
+        <div class="password-modal-content">
+            <h2>Admin Login</h2>
+            <p>กรุณาใส่รหัสผ่านแอดมิน</p>
+            <form id="password-form">
+                <input type="password" id="admin-password-input" placeholder="รหัสผ่าน" required>
+                <button type="submit">เข้าสู่ระบบ</button>
+                <p id="password-error">รหัสผ่านไม่ถูกต้อง!</p>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmation-modal-overlay" class="modal-overlay">
+        <div class="confirmation-modal-content">
+            <h3>ยืนยันการดำเนินการ</h3>
+            <p id="confirmation-message">คุณต้องการ ... รายการนี้ใช่หรือไม่?</p>
+            <div class="confirmation-buttons">
+                <button id="cancel-action-btn" class="btn-cancel">ยกเลิก</button>
+                <button id="confirm-action-btn" class="">ยืนยัน</button> 
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal-overlay" class="modal-overlay">
+        <div class="alert-modal-content" id="alert-modal-content">
+            <h3 id="alert-title">แจ้งเตือน</h3>
+            <p id="alert-message">นี่คือข้อความ</p>
+            <button id="alert-ok-btn">ตกลง</button>
+        </div>
+    </div>
+
+    <div id="slip-modal-overlay" class="modal-overlay">
+        <div class="slip-modal-content">
+            <h3>สลิปการโอนเงิน</h3>
+            <img id="slip-modal-image" src="" alt="Slip Image">
+            <button id="slip-modal-close-btn">ปิด</button>
+        </div>
+    </div>
+
+
+    <div id="admin-content">
+        <div class="container">
+            <h1>หน้าตรวจสอบสลิป</h1>
+            <button onclick="loadAdminList()">รีเฟรชข้อมูล</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>เวลา</th>
+                        <th>จำนวน</th>
+                        <th>สถานะ</th>
+                        <th>สลิป</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="admin.js" defer></script>
+</body>
+</html>

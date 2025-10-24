@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบโอนเงิน</title>
+    <style>
+        /* --- CSS "สบายตา" (ปรับปรุงแล้ว) --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; background-color: #f8f9fa; 
+            color: #333; line-height: 1.6;
+        }
+        .navbar { 
+            background-color: #ffffff; padding: 15px 30px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-bottom: 1px solid #e9ecef;
+        }
+        .navbar .total { 
+            font-size: 1.1em; font-weight: 600; color: #495057;
+        }
+        .navbar .total span { color: #28a745; font-size: 1.2em; }
+        .navbar button { 
+            background-color: #007bff; color: white; border: none; 
+            padding: 10px 18px; border-radius: 8px; cursor: pointer;
+            font-weight: 600; transition: background-color 0.2s;
+        }
+        .navbar button:hover { background-color: #0056b3; }
+        .container { 
+            padding: 25px 30px; max-width: 800px; margin: 20px auto;
+        }
+        h2 {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px; color: #343a40;
+        }
+        .transfer-list-item { 
+            background-color: #ffffff; border: 1px solid #e0e0e0; 
+            padding: 18px 20px; margin-bottom: 12px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .transfer-list-item span { font-weight: 500; color: #555; }
+        .transfer-list-item button { 
+            background-color: #007bff; /* เปลี่ยนเป็นสีฟ้า */
+            color: white; border: none; 
+            padding: 8px 12px; border-radius: 6px; cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        .transfer-list-item button:hover { background-color: #0056b3; opacity: 1; }
+        
+        /* CSS สำหรับป้ายสถานะ (เพิ่ม) */
+        .status-badge {
+            padding: 4px 10px; border-radius: 12px;
+            font-size: 13px; font-weight: 600;
+            display: inline-block; margin-left: 8px;
+        }
+        .status-Pending { color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; }
+        .status-Confirmed { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .status-Rejected { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        
+        /* --- CSS Modal (Overlay ทั่วไป) --- */
+        .modal-overlay {
+            display: none; /* ซ่อนไว้ก่อน */
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            padding-top: 0; /* แก้ไข */
+            overflow: auto; /* เพิ่ม */
+        }
+        
+        /* Modal 1: ฟอร์มโอนเงิน */
+        #transfer-modal { z-index: 100; }
+        .modal-content { 
+            background-color: #fefefe; margin: 5% auto; 
+            padding: 25px 30px; border: 1px solid #888; 
+            width: 90%; max-width: 450px; border-radius: 12px; 
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .modal-content img { 
+            max-width: 250px; height: auto; margin-bottom: 15px;
+            border: 1px solid #eee; border-radius: 8px;
+        }
+        .modal-content input[type="number"], .modal-content input[type="file"] { 
+            width: calc(100% - 24px); padding: 12px; 
+            margin-bottom: 15px; border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        #upload-form label {
+            display: block; text-align: left; margin-bottom: 5px;
+            font-weight: 600; color: #555;
+        }
+        #upload-form button[type="submit"] {
+            background-color: #28a745; color: white; border: none;
+            padding: 12px 20px; margin-top: 10px; width: 100%;
+            border-radius: 8px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        #upload-form button[type="submit"]:hover { background-color: #218838; }
+        .close { 
+            color: #aaa; position: absolute; top: 10px;
+            right: 20px; font-size: 30px; font-weight: bold; 
+            cursor: pointer; 
+        }
+        .close:hover, .close:focus { color: #333; }
+        #loading { 
+            font-weight: bold; color: #007bff; 
+            display: none; margin-top: 15px;
+        }
+
+        /* --- CSS Modal 2: แจ้งเตือน (Alert) --- */
+        #alert-modal-overlay { z-index: 102; }
+        .alert-modal-content {
+            background-color: #fff; padding: 25px 30px; border-radius: 12px;
+            width: 90%; max-width: 350px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .alert-modal-content h3 { margin-top: 0; font-size: 1.3em; }
+        .alert-modal-content.success h3 { color: #28a745; }
+        .alert-modal-content.error h3 { color: #dc3545; }
+        .alert-modal-content p { font-size: 16px; margin-bottom: 20px; color: #333; }
+        .alert-modal-content button {
+            background-color: #007bff; color: white; border: none;
+            padding: 12px 20px; width: 100%; border-radius: 8px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .alert-modal-content button:hover { background-color: #0056b3; }
+
+        /* --- CSS Modal 3: แสดงสลิป --- */
+        #slip-modal-overlay { z-index: 101; }
+        .slip-modal-content {
+            background-color: #fff; padding: 20px; border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center; max-width: 90vw;
+            margin: 5% auto; /* เพิ่มเพื่อให้จัดกลาง */
+        }
+        .slip-modal-content h3 {
+            margin-top: 0; margin-bottom: 15px;
+            border-bottom: 1px solid #eee; padding-bottom: 10px;
+        }
+        .slip-modal-content img {
+            max-width: 100%; max-height: 75vh;
+            border-radius: 8px; border: 1px solid #ddd;
+        }
+        .slip-modal-content button {
+            background-color: #6c757d; color: white; border: none;
+            padding: 10px 20px; margin-top: 15px; width: 100px;
+            border-radius: 6px; cursor: pointer;
+        }
+        .slip-modal-content button:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div></div> 
+        <div class="total">ยอดรวมที่ยืนยันแล้ว: <span id="total-amount">0.00</span> บาท</div>
+        <button id="open-transfer-modal">แจ้งโอนเงิน</button> </div>
+
+    <div class="container">
+        <h2>ประวัติการโอน</h2> <div id="transfer-list">
+            <p>กำลังโหลด...</p>
+        </div>
+    </div>
+
+    <div id="transfer-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>แจ้งโอนเงิน</h2>
+            <p>สแกน QR Code นี้เพื่อโอนเงิน</p>
+            <img src="QRCode.jpg" alt="PromptPay QR Code">
+            
+            <form id="upload-form">
+                <label for="amount">จำนวนเงินที่โอน:</label>
+                <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                
+                <label for="slip-upload">อัปโหลดสลิป:</label>
+                <input type="file" id="slip-upload" accept="image/*" required>
+                
+                <button type="submit">ยืนยันการอัปโหลด</button>
+                <p id="loading">กำลังอัปโหลด...</p>
+            </form>
+        </div>
+    </div>
+
+    <div id="alert-modal-overlay" class="modal-overlay">
+        <div class="alert-modal-content" id="alert-modal-content">
+            <h3 id="alert-title">แจ้งเตือน</h3>
+            <p id="alert-message">นี่คือข้อความ</p>
+            <button id="alert-ok-btn">ตกลง</button>
+        </div>
+    </div>
+
+    <div id="slip-modal-overlay" class="modal-overlay">
+        <div class="slip-modal-content">
+            <h3>สลิปการโอนเงิน</h3>
+            <img id="slip-modal-image" src="" alt="Slip Image">
+            <button id="slip-modal-close-btn">ปิด</button>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
