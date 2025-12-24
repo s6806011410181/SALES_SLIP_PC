@@ -1,7 +1,7 @@
 // !! แทนที่ด้วย URL ของคุณ !!
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQvvN9ePgaaRjLEi6XgMCXXYjMlBbzeIg83KIy7FnujfGM8YXQb7kDpRA-tGG3ya5V/exec";
 // !! ตั้งรหัสผ่านของคุณที่นี่ (ไม่ปลอดภัย) !!
-const ADMIN_PASSWORD = "admin14528"; 
+const ADMIN_PASSWORD = "admin113333"; 
 
 // --- องค์ประกอบ HTML (หน้าแอดมิน) ---
 const adminContent = document.getElementById('admin-content');
@@ -196,4 +196,5 @@ document.addEventListener('DOMContentLoaded', () => {
              slipModalOverlay.style.display = 'none';
         }
     });
+
 });
